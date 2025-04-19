@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipeze - Chat</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Tambahin CDN untuk socket.io-client -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Recipeze Chat</h1>
+            {% if current_user.is_authenticated %}
+                <p>Welcome, {{ current_user.username }}! <a href="{{ url_for('logout') }}">Logout</a></p>
+            {% else %}
+                <p><a href="{{ url_for('login') }}">Login</a> to chat!</p>
+            {% endif %}
+        </header>
+
+        <div id="chat-container">
+            <div id="chat-messages">
+                {% for message in messages %}
+                    <div class="message {% if message.user_id == current_user.id %}self{% endif %}">
+                        <strong>{{ message.username }} ({{ message.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}):</strong>
+                        <p>{{ message.content | safe }}</p>
+                    </div>
+                {% endfor %}
+            </div>
+            {% if current_user.is_authenticated %}
+                <form id="message-form">
+                    <textarea id="message-input" placeholder="Type your message..." required></textarea>
+                    <button type="submit">Send</button>
+                </form>
+            {% endif %}
+        </div>
+
+        <a href="{{ url_for('index') }}">Back to Home</a>
+    </div>
+
+    <script>
+        // Inisialisasi Socket.IO
+        const socket = io(); // `io` sekarang didefinisikan dari CDN
+
+        // Scroll ke bawah untuk melihat pesan terbaru
+        const chatMessages = document.getElementById('chat-messages');
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        // Handle pengiriman pesan
+        const messageForm = document.getElementById('message-form');
+        const messageInput = document.getElementById('message-input');
+
+        if (messageForm) {
+            messageForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const content = messageInput.value.trim();
+                if (content) {
+                    socket.emit('send_message', { content: content });
+                    messageInput.value = '';
+                }
+            });
+        }
+
+        // Handle pesan baru
+        socket.on('new_message', (data) => {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            if (data.is_self) {
+                messageDiv.classList.add('self');
+            }
+            messageDiv.innerHTML = `<strong>${data.username} (${data.timestamp}):</strong><p>${data.content}</p>`;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        });
+
+        // Handle error pesan
+        socket.on('message_error', (data) => {
+            alert(data.error);
+        });
+    </script>
+</body>
+</html>

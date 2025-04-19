@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}{{ recipe.title }}{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-md-6">
+            <img src="{{ recipe.image or '/static/assets/default_recipe.jpg' }}" class="img-fluid rounded" alt="{{ recipe.title }}">
+        </div>
+        <div class="col-md-6">
+            <h1>{{ recipe.title }}</h1>
+            <p><strong>Source:</strong> {{ recipe.source }}</p>
+            <div class="d-flex mb-3">
+                {% if current_user.is_authenticated %}
+                    <form method="POST" action="{{ url_for('interact') }}" class="interact-form me-2">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="source" value="{{ recipe.source }}">
+                        <input type="hidden" name="recipe_id" value="{{ recipe.id }}">
+                        <button type="submit" name="action" value="like" class="btn btn-outline-primary like-btn" data-source="{{ recipe.source }}" data-recipe-id="{{ recipe.id }}" {% if user_liked %}data-liked="true"{% else %}data-liked="false"{% endif %}>
+                            <i class="fas fa-heart"></i> <span class="like-text">{{ 'Unlike' if user_liked else 'Like' }}</span> (<span class="like-count">{{ likes }}</span>)
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ url_for('interact') }}" class="interact-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="source" value="{{ recipe.source }}">
+                        <input type="hidden" name="recipe_id" value="{{ recipe.id }}">
+                        <button type="submit" name="action" value="save" class="btn btn-outline-success save-btn" data-source="{{ recipe.source }}" data-recipe-id="{{ recipe.id }}" {% if user_saved %}data-saved="true"{% else %}data-saved="false"{% endif %}>
+                            <i class="fas fa-bookmark"></i> <span class="save-text">{{ 'Unsave' if user_saved else 'Save' }}</span> (<span class="save-count">{{ saves }}</span>)
+                        </button>
+                    </form>
+                    <div id="interact-error" class="text-danger ms-3 d-none"></div>
+                {% else %}
+                    <p><a href="{{ url_for('login') }}">Log in</a> to like or save this recipe.</p>
+                {% endif %}
+            </div>
+            <h3>Ingredients</h3>
+            <ul>
+                {% for ingredient in recipe.ingredients %}
+                    <li>{{ ingredient }}</li>
+                {% endfor %}
+            </ul>
+            <h3>Instructions</h3>
+            <p>{{ recipe.instructions | safe }}</p>
+        </div>
+    </div>
+
+    <div class="mt-5">
+        <h3>Comments</h3>
+        {% if current_user.is_authenticated %}
+            <form method="POST" action="{{ url_for('comment') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="source" value="{{ recipe.source }}">
+                <input type="hidden" name="recipe_id" value="{{ recipe.id }}">
+                <input type="hidden" name="redirect_url" value="{{ request.url }}">
+                <div class="mb-3">
+                    <textarea class="form-control" name="content" rows="3" placeholder="Add a comment..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit Comment</button>
+            </form>
+        {% else %}
+            <p><a href="{{ url_for('login') }}">Log in</a> to add a comment.</p>
+        {% endif %}
+
+        <div class="mt-4">
+            {% for comment in comments.items %}
+                <div class="card mb-2">
+                    <div class="card-body">
+                        <p class="card-text">{{ comment.content }}</p>
+                        <p class="card-subtitle text-muted">Posted by {{ comment.user.username }} on {{ comment.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+            {% if comments.has_prev or comments.has_next %}
+                <nav aria-label="Page navigation">
+                    <ul class="pagination">
+                        {% if comments.has_prev %}
+                            <li class="page-item"><a class="page-link" href="{{ url_for('recipe_detail', source=recipe.source, recipe_id=recipe.id, page=comments.prev_num) }}">Previous</a></li>
+                        {% endif %}
+                        {% if comments.has_next %}
+                            <li class="page-item"><a class="page-link" href="{{ url_for('recipe_detail', source=recipe.source, recipe_id=recipe.id, page=comments.next_num) }}">Next</a></li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

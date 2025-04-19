@@ -1,0 +1,52 @@
+body {
+  background-color: #f8f9fa;
+  background-image: url('/static/vegetable-pattern.jpg');
+  background-size: cover;
+  background-attachment: fixed;
+  font-family: 'Arial', sans-serif;
+}
+
+.card-img-top {
+  height: 200px;
+  object-fit: cover;
+}
+
+.weather-info {
+  font-size: 0.9rem;
+  color: #6c757d;
+}
+
+.interact-form {
+  display: inline-block;
+}
+
+.recipe-card {
+  transition: transform 0.3s ease-in-out;
+}
+
+.recipe-card:hover {
+  transform: scale(1.05);
+}
+
+.chat-box {
+  height: 400px;
+  overflow-y: scroll;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.message {
+  padding: 8px 12px;
+  border-radius: 8px;
+  max-width: 70%;
+}
+
+.message.text-end {
+  background-color: #e3f2fd;
+  margin-left: auto;
+}
+
+.text-danger {
+  font-size: 0.9rem;
+}

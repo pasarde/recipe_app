@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+    <h1>{{ user.username }}'s Profile</h1>
+    <p>Email: {{ user.email }}</p>
+    <a href="{{ url_for('user_profile') }}" class="btn btn-primary mb-3">Edit Profile</a>
+
+    <h3>Liked Recipes</h3>
+    {% if liked_recipes %}
+        <div class="row">
+            {% for item in liked_recipes %}
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <img src="{{ item.recipe.image }}" class="card-img-top" alt="{{ item.recipe.title }}">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ item.recipe.title }}</h5>
+                            <p class="card-text">Source: {{ item.recipe.source }}</p>
+                            <a href="{{ item.recipe.url }}" class="btn btn-primary">View Recipe</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        {% if liked.has_prev or liked.has_next %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination">
+                    {% if liked.has_prev %}
+                        <li class="page-item"><a class="page-link" href="{{ url_for('profile', page=liked.prev_num) }}">Previous</a></li>
+                    {% endif %}
+                    {% if liked.has_next %}
+                        <li class="page-item"><a class="page-link" href="{{ url_for('profile', page=liked.next_num) }}">Next</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <p>You haven't liked any recipes yet.</p>
+    {% endif %}
+
+    <h3>Saved Recipes</h3>
+    {% if saved %}
+        <div class="row">
+            {% for interaction in saved %}
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ interaction.recipe_id }}</h5>
+                            <p class="card-text">Source: {{ interaction.recipe_source }}</p>
+                            <a href="{{ url_for('recipe_detail', source=interaction.recipe_source, recipe_id=interaction.recipe_id) }}" class="btn btn-primary">View Recipe</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>You haven't saved any recipes yet.</p>
+    {% endif %}
+{% endblock %}

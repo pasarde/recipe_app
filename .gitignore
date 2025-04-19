@@ -14,3 +14,4 @@ env/
 # Ignore IDE-specific files
 .vscode/
 .idea/
+.qodo

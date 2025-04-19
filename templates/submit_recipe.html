@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Submit Recipe{% endblock %}
+
+{% block content %}
+    <h1>Submit a New Recipe</h1>
+    <form method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="mb-3">
+            <label for="title" class="form-label">Recipe Title</label>
+            <input type="text" class="form-control" id="title" name="title" required>
+        </div>
+        <div class="mb-3">
+            <label for="ingredients" class="form-label">Ingredients (one per line)</label>
+            <textarea class="form-control" id="ingredients" name="ingredients" rows="5" required></textarea>
+        </div>
+        <div class="mb-3">
+            <label for="instructions" class="form-label">Instructions</label>
+            <textarea class="form-control" id="instructions" name="instructions" rows="5" required></textarea>
+        </div>
+        <div class="mb-3">
+            <label for="cuisine" class="form-label">Cuisine</label>
+            <select class="form-select" id="cuisine" name="cuisine" required>
+                <option value="western">Western</option>
+                <option value="indonesian">Indonesian</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="region" class="form-label">Region (if Indonesian)</label>
+            <select class="form-select" id="region" name="region">
+                <option value="">None</option>
+                <option value="Java">Java</option>
+                <option value="Sumatra">Sumatra</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="image" class="form-label">Upload Image</label>
+            <input type="file" class="form-control" id="image" name="image" accept="image/*">
+        </div>
+        <button type="submit" class="btn btn-primary">Submit Recipe</button>
+    </form>
+{% endblock %}

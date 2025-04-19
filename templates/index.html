@@ -1,55 +1,198 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Recipe Suggestions</title>
-  <style>
-    body { font-family: Arial, sans-serif; }
-    .recipe { border: 1px solid #ddd; padding: 10px; margin: 10px; }
-    img { display: block; margin-bottom: 10px; }
-  </style>
-</head>
-<body>
-  <h1>Find a Recipe Based on Your Ingredients</h1>
-  <form id="ingredientForm">
-    <input type="text" id="ingredients" placeholder="Enter ingredients (e.g., tomato,basil)" required>
-    <button type="submit">Search</button>
-  </form>
-  <div id="results"></div>
-  
-  <script>
-    document.getElementById("ingredientForm").addEventListener("submit", function(e) {
-      e.preventDefault();
-      var ingredients = document.getElementById("ingredients").value;
-      fetch("/api/suggest?ingredients=" + encodeURIComponent(ingredients))
-        .then(response => response.json())
-        .then(data => {
-          var resultsDiv = document.getElementById("results");
-          resultsDiv.innerHTML = "";
-          if (data.error) {
-            resultsDiv.innerHTML = "<p>Error: " + data.error + "</p>";
-          } else if (data.length === 0) {
-            resultsDiv.innerHTML = "<p>No recipes found.</p>";
-          } else {
-            data.forEach(function(recipe) {
-              var recipeDiv = document.createElement("div");
-              recipeDiv.className = "recipe";
-              recipeDiv.innerHTML = `
-                <h2>${recipe.title}</h2>
-                <p><strong>Ready in Minutes:</strong> ${recipe.readyInMinutes || "N/A"}</p>
-                <p><strong>Servings:</strong> ${recipe.servings || "N/A"}</p>
-                <p><a href="${recipe.sourceUrl}" target="_blank">View Recipe</a></p>
-                <img src="${recipe.image}" alt="${recipe.title}" width="200">
-                <p>${recipe.summary}</p>
-              `;
-              resultsDiv.appendChild(recipeDiv);
-            });
-          }
-        })
-        .catch(error => {
-          console.error("Error fetching recipes:", error);
-        });
-    });
-  </script>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>Welcome to Recipeze!</h1>
+            <p>Discover and share delicious recipes from around the world.</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="weather-info">
+                <div id="location-weather">
+                    <p>Detecting your location...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Form -->
+    <form method="GET" action="{{ url_for('index') }}" class="mb-4">
+        <div class="row">
+            <div class="col-md-4">
+                <input type="text" name="query" class="form-control" placeholder="Search recipes..." value="{{ query or '' }}">
+            </div>
+            <div class="col-md-3">
+                <select name="cuisine" class="form-select">
+                    <option value="western" {% if request.args.get('cuisine') == 'western' %}selected{% endif %}>Western</option>
+                    <option value="indonesian" {% if request.args.get('cuisine') == 'indonesian' %}selected{% endif %}>Indonesian</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="region" class="form-select">
+                    <option value="All Regions">All Regions</option>
+                    <option value="Java" {% if request.args.get('region') == 'Java' %}selected{% endif %}>Java</option>
+                    <option value="Sumatra" {% if request.args.get('region') == 'Sumatra' %}selected{% endif %}>Sumatra</option>
+                    <option value="Kalimantan Selatan" {% if request.args.get('region') == 'Kalimantan Selatan' %}selected{% endif %}>Kalimantan Selatan</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Search</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Location-based Recommendations -->
+    <div id="location-recommendations" class="mb-4">
+        <h3>Location-based Recommendations</h3>
+        <div id="location-recommendations-list" class="row">
+            <!-- Recommendations will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Weather-based Recommendations -->
+    {% if recommendations %}
+        <h3>Weather-based Recommendation (Default: Jakarta)</h3>
+        <div class="row">
+            {% for recipe in recommendations %}
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <img src="{{ recipe.image if recipe.image else '/static/assets/default_recipe.jpg' }}" class="card-img-top" alt="{{ recipe.title }}" onerror="this.src='/static/assets/default_recipe.jpg'; console.log('Failed to load image for {{ recipe.title }}: {{ recipe.image }}')">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ recipe.title }}</h5>
+                            <p class="card-text">Source: {{ recipe.source }}</p>
+                            <a href="{{ url_for('recipe_detail', source=recipe.source, recipe_id=recipe.id) }}" class="btn btn-primary">View Recipe</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Search Results -->
+    {% if search_results %}
+        <h3>Search Results for "{{ query }}"</h3>
+        <div class="row">
+            {% for recipe in search_results %}
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <img src="{{ recipe.image if recipe.image else '/static/assets/default_recipe.jpg' }}" class="card-img-top" alt="{{ recipe.title }}" onerror="this.src='/static/assets/default_recipe.jpg'; console.log('Failed to load image for {{ recipe.title }}: {{ recipe.image }}')">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ recipe.title }}</h5>
+                            <p class="card-text">Source: {{ recipe.source }}</p>
+                            <a href="{{ url_for('recipe_detail', source=recipe.source, recipe_id=recipe.id) }}" class="btn btn-primary">View Recipe</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Random Recipes -->
+    <h3>Explore Recipes</h3>
+    <div class="row">
+        {% for recipe in random_recipes %}
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <img src="{{ recipe.image if recipe.image else '/static/assets/default_recipe.jpg' }}" class="card-img-top" alt="{{ recipe.title }}" onerror="this.src='/static/assets/default_recipe.jpg'; console.log('Failed to load image for {{ recipe.title }}: {{ recipe.image }}')">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ recipe.title }}</h5>
+                        <p class="card-text">Source: {{ recipe.source }}</p>
+                        <a href="{{ url_for('recipe_detail', source=recipe.source, recipe_id=recipe.id) }}" class="btn btn-primary">View Recipe</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Related Searches -->
+    {% if related_searches %}
+        <h3>Related Searches</h3>
+        <div class="d-flex flex-wrap">
+            {% for search in related_searches %}
+                <a href="{{ url_for('index', query=search.query, cuisine=search.cuisine, region=search.region or 'All Regions') }}" class="btn btn-outline-secondary me-2 mb-2">
+                    {{ search.title }} {% if search.is_popular %}<span class="badge bg-danger">Popular</span>{% endif %}
+                </a>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        // Geolocation Detection for Personalized Recommendations
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const { latitude, longitude } = position.coords;
+                    try {
+                        // Fetch weather data using coordinates
+                        const weatherResponse = await fetch('/api/weather-by-coords', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            },
+                            body: JSON.stringify({ lat: latitude, lon: longitude })
+                        });
+                        const weatherData = await weatherResponse.json();
+                        if (weatherData.error) {
+                            throw new Error(weatherData.error);
+                        }
+
+                        // Fetch location details (for regional mapping)
+                        const locationResponse = await fetch(
+                            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+                        );
+                        const locationData = await locationResponse.json();
+                        const city = locationData.city || 'Unknown City';
+                        const region = locationData.principalSubdivision || 'Unknown Region';
+                        const country = locationData.countryName || 'Unknown Country';
+
+                        // Display location and weather
+                        document.getElementById('location-weather').innerHTML = `
+                            <p><strong>Location:</strong> ${city}, ${region}, ${country}</p>
+                            <p><strong>Weather:</strong> ${weatherData.condition} (${weatherData.temp}°C)</p>
+                        `;
+
+                        // Fetch recipe recommendations based on weather and region
+                        const recipeResponse = await fetch('/api/recommend-by-location', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            },
+                            body: JSON.stringify({ weather: weatherData, region: region })
+                        });
+                        const recipes = await recipeResponse.json();
+                        if (recipes.error) {
+                            throw new Error(recipes.error);
+                        }
+
+                        const recipeContainer = document.getElementById('location-recommendations-list');
+                        recipeContainer.innerHTML = recipes.map(recipe => `
+                            <div class="col-md-4 mb-3">
+                                <div class="card recipe-card">
+                                    <img src="${recipe.image || '/static/assets/default_recipe.jpg'}" class="card-img-top" alt="${recipe.title}" onerror="this.src='/static/assets/default_recipe.jpg'; console.log('Failed to load image for ${recipe.title}: ${recipe.image}')">
+                                    <div class="card-body">
+                                        <h5 class="card-title">${recipe.title}</h5>
+                                        <p class="card-text">Source: ${recipe.source}</p>
+                                        <a href="/recipe/${recipe.source}/${recipe.id}" class="btn btn-primary">View Recipe</a>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                    } catch (error) {
+                        document.getElementById('location-weather').innerHTML = `<p class="text-danger">Error fetching data: ${error.message}</p>`;
+                    }
+                },
+                (error) => {
+                    document.getElementById('location-weather').innerHTML = `<p class="text-danger">Unable to detect location: ${error.message}</p>`;
+                }
+            );
+        } else {
+            document.getElementById('location-weather').innerHTML = `<p class="text-danger">Geolocation is not supported by your browser.</p>`;
+        }
+    </script>
+{% endblock %}

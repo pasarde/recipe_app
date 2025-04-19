@@ -13,11 +13,13 @@ This is the ML component of the Recipe Suggestion App. It uses spoonacular api t
 2. Install dependencies:
     ```bash
     pip install -r requirements.txt
+    pip install cohere
     ```
 
-3. Add your Spoonacular API key to a .env file:
+3. Add your Spoonacular and Cohere API key to a .env file:
 
     - SPOONACULAR_KEY="YOUR_SPOONACULAR_API_KEY"
+    - COHERE_KEY="YOUR_COHERE_API_KEY"
 
 4. Run the App:
     ```bash
